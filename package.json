@@ -1,0 +1,13 @@
+{
+	"name": "naive-promesse",
+	"version": "1.0.0",
+	"description": "Naive Promises/A+ implementation",
+	"keywords": ["promise", "promises"],
+	"main": "promesse",
+	"devDependencies": {
+		"promises-aplus-tests": ""
+	},
+	"scripts": {
+		"test": "promises-aplus-tests promesse.js"
+	}
+}
