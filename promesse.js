@@ -22,11 +22,12 @@ as the name is changed.
 */
 
 function Promesse() {
+	// State constants
 	var PENDING = 0;
 	var FULFILLED = 1;
 	var REJECTED = -1;
 
-	// State of the promise (0: pending, 1: fulfilled, -1: rejected)
+	// State of the promise
 	var _etat = PENDING;
 
 	// Value when fulfilled or reason when rejected
@@ -54,26 +55,14 @@ function Promesse() {
 		}
 	}
 
-	// Fulfillment function
-
-	this.valider = function(valeur) {
-		changerEtat(FULFILLED, _callbacksValide, valeur);
-	}
-
-	// Rejection function
-
-	this.rejeter = function(raison) {
-		changerEtat(REJECTED, _callbacksRejet, raison);
-	}
-
-	// Callback calling
+	// Delayed callback calling
 
 	function appelCallback(promesse, callback) {
 		process.nextTick(function() {
 			try {
 				var retour = callback.call(null, _valeur);
 
-				if(retour != null && retour != undefined && retour.then && retour.then instanceof Function)
+				if(retour instanceof Object && retour.then && retour.then instanceof Function)
 				{
 					retour.then(promesse.valider, promesse.rejeter);
 				}
@@ -88,19 +77,34 @@ function Promesse() {
 	// Manages the callback to either call it if the promise is resolved or add it to the right callbacks list
 
 	function gestionCallback(promesse, callback, etat) {
-		var callbacks;
-		if(etat == FULFILLED)
-			callbacks = _callbacksValide;
-		else
-			callbacks = _callbacksRejet;
-
 		if(_etat == etat)
 			appelCallback(promesse, callback);
 		else
-			callbacks.push(function() {
+		{
+			var wrapper = function() {
 				appelCallback(promesse, callback);
-			});
+			};
+
+			if(etat == FULFILLED)
+				_callbacksValide.push(wrapper);
+			else
+				_callbacksRejet.push(wrapper);
+		}
 	}
+
+	// Fulfillment function
+
+	this.valider = function(valeur) {
+		changerEtat(FULFILLED, _callbacksValide, valeur);
+	}
+
+	// Rejection function
+
+	this.rejeter = function(raison) {
+		changerEtat(REJECTED, _callbacksRejet, raison);
+	}
+
+	// Then function which adds callbacks for when/if promise is fulfilled/rejected
 
 	this.then = function(quandValidee, quandRejetee) {
 		var p = new Promesse();
